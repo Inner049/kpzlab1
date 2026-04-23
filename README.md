@@ -6,5 +6,5 @@
 | Компонент   | Технологія         |
 |-------------|--------------------|
 | Backend     | Python / FastAPI   |
-| База даних  | PostgreSQL         |
+| База даних  | PostgreSQL         | 
 | ORM         | SQLAlchemy         |
