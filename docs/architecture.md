@@ -41,7 +41,7 @@ Expense Tracker вирішує проблему відсутності конт�
 
 ## 4. Структура директорій проєкту
 
-```text
+
 src/
 ├── api/                  # Presentation layer: обробка HTTP запитів
 │   └── routes/
@@ -63,3 +63,20 @@ docs/
 ├── architecture.png
 └── adr/
     └── 001-architecture-style.md
+	
+## 5. Рішення щодо якості коду (SOLID)
+
+**Застосовані принципи SOLID:**
+* **SRP (Single Responsibility):** Кожен клас має одну відповідальність. Наприклад, `ExpenseRepository` робить лише SQL-запити, `NotificationService` лише відправляє повідомлення, а `ExpenseService` виконує бізнес-правила.
+* **OCP (Open/Closed):** Додавання нових форматів експорту (CSV, PDF) реалізується через створення нових методів у `ReportService`, не змінюючи існуючу логіку фільтрації.
+* **DIP (Dependency Inversion):** Сервіси (`ExpenseService`) не створюють підключення до БД всередині себе, а отримують абстрактний `ExpenseRepository` через конструктор (Dependency Injection). Це дозволяє легко підставляти Mock-об'єкти під час тестування.
+
+**Структура модулів:**
+Файли розбиті за принципом Separation of Concerns (SoC) — за шарами архітектури:
+* `api/routes/` — обробка HTTP.
+* `services/` — правила домену.
+* `repositories/` — доступ до PostgreSQL.
+
+**Code Smells, яких ми уникаємо:**
+* **Magic Numbers:** Замість хардкоду чисел використовуються іменовані константи (наприклад, `MAX_EXPENSE_AMOUNT = 1_000_000`).
+* **Duplicate Code:** Логіка валідації email або сум виноситься в окремі чисті функції або методи, дотримуючись принципу DRY.
