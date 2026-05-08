@@ -1,0 +1,311 @@
+openapi: "3.0.3"
+info:
+  title: "Expense Tracker API"
+  version: "1.0.0"
+  description: "REST API для управління особистими фінансами: облік витрат, категоризація та аналітика."
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Локальний сервер розробки
+
+paths:
+  /users:
+    post:
+      summary: Реєстрація нового користувача
+      tags: [Users]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserCreate"
+      responses:
+        "201":
+          description: Користувача успішно створено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "422":
+          description: Помилка валідації
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /users/{id}:
+    get:
+      summary: Отримати профіль користувача
+      tags: [Users]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Профіль знайдено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: Користувача не знайдено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /categories:
+    get:
+      summary: Отримати список категорій
+      tags: [Categories]
+      responses:
+        "200":
+          description: Список категорій
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Category"
+        "500":
+          description: Внутрішня помилка сервера
+    post:
+      summary: Створити нову категорію
+      tags: [Categories]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CategoryCreate"
+      responses:
+        "201":
+          description: Категорію створено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Category"
+        "400":
+          description: Неправильний формат запиту
+
+  /categories/{id}:
+    delete:
+      summary: Видалити категорію
+      tags: [Categories]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Успішно видалено
+        "403":
+          description: Заборонено видаляти базові категорії
+
+  /expenses:
+    get:
+      summary: Отримати список витрат
+      description: Повертає витрати поточного користувача
+      tags: [Expenses]
+      parameters:
+        - name: category_id
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Список витрат
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Expense"
+        "401":
+          description: Не авторизований
+    post:
+      summary: Додати нову витрату
+      tags: [Expenses]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExpenseCreate"
+      responses:
+        "201":
+          description: Витрату успішно додано
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Expense"
+        "422":
+          description: Помилка валідації суми або дати
+
+  /expenses/{id}:
+    get:
+      summary: Отримати детальну інформацію про витрату
+      tags: [Expenses]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Дані про витрату
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Expense"
+        "404":
+          description: Витрату не знайдено
+    patch:
+      summary: Оновити витрату (суму або опис)
+      tags: [Expenses]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: number
+                description:
+                  type: string
+      responses:
+        "200":
+          description: Витрату оновлено
+        "403":
+          description: Немає прав для редагування цієї витрати
+    delete:
+      summary: Видалити витрату
+      tags: [Expenses]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Витрату успішно видалено
+        "404":
+          description: Витрату не знайдено
+
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        name:
+          type: string
+          example: "Єгор"
+        created_at:
+          type: string
+          format: date-time
+    
+    UserCreate:
+      type: object
+      required: [email, password, name]
+      properties:
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        password:
+          type: string
+          format: password
+          minLength: 8
+        name:
+          type: string
+          example: "Єгор"
+    
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 5
+        name:
+          type: string
+          example: "Продукти"
+        color:
+          type: string
+          example: "#FF5733"
+    
+    CategoryCreate:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          example: "Транспорт"
+        color:
+          type: string
+          example: "#3333FF"
+
+    Expense:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 42
+        amount:
+          type: number
+          format: float
+          example: 150.50
+        category_id:
+          type: integer
+          example: 5
+        description:
+          type: string
+          example: "Таксі додому"
+        date:
+          type: string
+          format: date
+          example: "2026-05-08"
+
+    ExpenseCreate:
+      type: object
+      required: [amount, category_id, date]
+      properties:
+        amount:
+          type: number
+          format: float
+        category_id:
+          type: integer
+        description:
+          type: string
+        date:
+          type: string
+          format: date
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+          example: "Ресурс не знайдено"
