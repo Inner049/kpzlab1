@@ -1,41 +1,38 @@
-# Відсутність Magic Numbers: всі константи мають назви
-MAX_EXPENSE_AMOUNT = 1_000_000
-MIN_EXPENSE_AMOUNT = 0.01
+# src/services/expense_service.py
+import logging
+from datetime import date
+from src.validators.expense_validator import ExpenseValidator
+from src.exceptions import ExpenseNotFoundError
 
-class ExpenseRepository:
-    """SRP: Тільки робота з БД витрат"""
-    def __init__(self, db_session):
-        self.db = db_session
-        
-    def save_expense(self, user_id: int, amount: float, category_id: int):
-        pass # Тут буде логіка SQLAlchemy
-
-class NotificationService:
-    """SRP: Тільки відправка сповіщень"""
-    def alert_budget_exceeded(self, user_id: int):
-        pass # Логіка відправки push або email
+# Ініціалізуємо логер для цього модулю
+logger = logging.getLogger(__name__)
 
 class ExpenseService:
-    """SRP: Бізнес-логіка витрат"""
-    # DIP: Залежності передаються через конструктор (інтерфейси)
-    def __init__(self, repository: ExpenseRepository, notifier: NotificationService):
-        self.repository = repository
-        self.notifier = notifier
+    def __init__(self):
+        # Імітація БД
+        self.db = {1: {"amount": 100, "category_id": 1, "description": "Кава"}}
 
-    def add_expense(self, user_id: int, amount: float, category_id: int):
-        # DRY: Валідація не дублюється, використовуємо константи
-        if not (MIN_EXPENSE_AMOUNT <= amount <= MAX_EXPENSE_AMOUNT):
-            raise ValueError(f"Сума має бути від {MIN_EXPENSE_AMOUNT} до {MAX_EXPENSE_AMOUNT}")
+    def add_expense(self, amount: float, category_id: int, description: str, expense_date: date):
+        logger.info(f"Спроба додати нову витрату: {amount} UAH") # 1. INFO
+        try:
+            logger.debug(f"Валідація даних: amount={amount}, cat={category_id}") # 2. DEBUG
+            ExpenseValidator.validate(amount, category_id, description, expense_date)
             
-        # Координація
-        self.repository.save_expense(user_id, amount, category_id)
-        
-        # Перевірка бізнес-правил
-        if self._is_budget_exceeded(user_id, category_id):
-            self.notifier.alert_budget_exceeded(user_id)
-            
-        return True
+            if amount > 10000:
+                logger.warning(f"Увага: додається незвично велика витрата: {amount}") # 3. WARNING
 
-    def _is_budget_exceeded(self, user_id: int, category_id: int) -> bool:
-        # Логіка перевірки лімітів
-        return False
+            new_id = len(self.db) + 1
+            self.db[new_id] = {"amount": amount, "category_id": category_id, "description": description}
+            
+            logger.info(f"Витрату успішно збережено з ID {new_id}") # 4. INFO
+            return new_id
+        except Exception as e:
+            logger.error(f"Помилка при збереженні витрати: {e}", exc_info=True) # 5. ERROR
+            raise
+
+    def get_expense(self, expense_id: int):
+        logger.debug(f"Пошук витрати ID {expense_id}")
+        if expense_id not in self.db:
+            logger.warning(f"Витрату ID {expense_id} не знайдено!")
+            raise ExpenseNotFoundError(expense_id)
+        return self.db[expense_id]
