@@ -45,3 +45,47 @@ expense = (ExpenseBuilder()
            .build())
 print(expense)
 print("=" * 50)
+
+print("\n" + "=" * 50)
+print("ПР-9: ПОВЕДІНКОВІ ТА СТРУКТУРНІ ПАТЕРНИ")
+print("=" * 50)
+
+# 1. OBSERVER
+print("\n--- 1. Observer (EventBus) ---")
+from src.patterns.event_bus import EventBus, log_expense, check_budget, send_alert
+bus = EventBus()
+bus.on("expense.added", log_expense)
+bus.on("expense.added", check_budget)
+bus.on("expense.added", send_alert)
+
+# 2. STRATEGY + FACTORY
+print("\n--- 2. Strategy + Factory ---")
+from src.patterns.expense_strategy import StrategyFactory, ExpenseReportContext
+expenses_data = [
+    {"amount": 500, "category": "Їжа"},
+    {"amount": 1200, "category": "Техніка"},
+    {"amount": 100, "category": "Їжа"}
+]
+
+for strategy_name in ["total", "category", "average"]:
+    strategy = StrategyFactory.create(strategy_name)
+    context = ExpenseReportContext(strategy)
+    print(f"Стратегія '{strategy_name}': {context.generate(expenses_data)}")
+
+# 3. DECORATOR
+print("\n--- 3. Decorator (@cache) ---")
+from src.core.decorators import cache
+
+@cache
+def expensive_calculation(x):
+    return x * x
+
+expensive_calculation(5) # Обчислить
+expensive_calculation(5) # Візьме з кешу
+
+# 4. FACADE
+print("\n--- 4. Facade ---")
+from src.patterns.expense_facade import ExpenseFacade
+facade = ExpenseFacade()
+# Цей виклик запустить Decorator (Timer) і Observer (EventBus)
+facade.process_new_expense(1500, "Техніка")
